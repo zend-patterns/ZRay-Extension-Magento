@@ -4,9 +4,18 @@ class Magento {
 	public function mageRunExit($context, &$storage){
 		$storage['observers'] = array();
 		$this->storeObservers($storage['observers']);
-		
 		$storage['info'] = array('store' => Mage::app()->getStore(), 'website' => Mage::app()->getWebsite(), 'frontcontroller' => Mage::app()->getFrontController(), 'request' => Mage::app()->getRequest());
 		$storage['handles'] = Mage::app()->getLayout()->getUpdate()->getHandles();
+	}
+	
+	public function appCallObserverMethod($context, & $storage){
+
+		$method = $context['functionArgs'][1];
+		$observerData = $context['functionArgs'][2]->getData();
+		$event = $observerData['event']->getName();
+		$object = get_class($context['functionArgs'][0]);
+
+		$storage['events'] = array('event' => $event, 'class' => $object, 'method' => $method);
 	}
 	
 	/**
@@ -53,3 +62,4 @@ $zrayMagento = new Magento();
 
 $zre = new ZRayExtension('magento');
 $zre->traceFunction('Mage::run', function(){}, array($zrayMagento, 'mageRunExit'));
+$zre->traceFunction('Mage_Core_Model_App::_callObserverMethod', function(){}, array($zrayMagento, 'appCallObserverMethod'));
