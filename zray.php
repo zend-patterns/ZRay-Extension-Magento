@@ -14,9 +14,18 @@ class Magento {
 	public function mageRunExit($context, &$storage){
 		$storage['observers'] = array();
 		$this->storeObservers($storage['observers']);
-		$storage['info'] = array('store' => Mage::app()->getStore(), 'website' => Mage::app()->getWebsite(), 'frontcontroller' => Mage::app()->getFrontController(), 'request' => Mage::app()->getRequest());
-		$storage['handles'] = Mage::app()->getLayout()->getUpdate()->getHandles();
+		$storage['info'] = array(
+/// store, website, frontcontroller all cause problems in unserialize
+// 				'store' => Mage::app()->getStore(),
+// 				'website' => Mage::app()->getWebsite(),
+// 				'frontcontroller' => Mage::app()->getFrontController(),
+				'request' => Mage::app()->getRequest()
+		);
+		$storage['handles'] = array_map(function($handle){
+			return array('name' => $handle);
+		}, Mage::app()->getLayout()->getUpdate()->getHandles());
 	}
+	
 	
 	/**
 	 * @param array $context
@@ -42,7 +51,7 @@ class Magento {
 		$block = $observerData['event']->getBlock();
 		$object = get_class($context['functionArgs'][0]);
 
-		$storage['events'][] = array('event' => $event, 'class' => $object, 'method' => $method,
+		$storage['events'] = array('event' => $event, 'class' => $object, 'method' => $method,
 				'duration' => $context['durationInclusive'], 'block' => $block, 'target' => get_class($this->eventTargets[$event]));
 	}
 	
