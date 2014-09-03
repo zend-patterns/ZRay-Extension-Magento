@@ -1,5 +1,6 @@
 <?php
 
+
 class Magento {
 	
 	/**
@@ -14,6 +15,7 @@ class Magento {
 	public function mageRunExit($context, &$storage){
 		$storage['observers'] = array();
 		$this->storeObservers($storage['observers']);
+
 //		$storage['info'] = array(
 /// store, website, frontcontroller all cause problems in unserialize
 // 				'store' => Mage::app()->getStore(),
@@ -95,6 +97,7 @@ class Magento {
 						'area' => $eventArea,
 						'event' => $eventName,
 						'name' => $observerName,
+                        'type' => (string)$observer->type ? type : 'singleton',
 						'class' => Mage::app()->getConfig()->getModelClassName($observer->class),
 						'method' => (string)$observer->method
 				);
@@ -111,3 +114,5 @@ $zre = new ZRayExtension('magento');
 $zre->traceFunction('Mage::run', function(){}, array($zrayMagento, 'mageRunExit'));
 $zre->traceFunction('Mage_Core_Model_App::_callObserverMethod', function(){}, array($zrayMagento, 'appCallObserverMethod'));
 $zre->traceFunction('Mage::dispatchEvent', array($zrayMagento, 'magDispatchEvent'), function(){});
+//$zre->traceFunction('Mage_Core_Controller_Varien_Front', function(){}, function(){});
+////$this->_getRequestRewriteController()->rewrite();
