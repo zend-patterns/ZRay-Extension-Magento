@@ -1,6 +1,6 @@
 <?php
 
-namespace ZRay\Producer\Extension;
+namespace ZRayExtensionMagento\Producer;
 
 use DevBar\Listener\AbstractDevBarProducer;
 use Zend\View\Model\ViewModel;

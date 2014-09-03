@@ -1,13 +1,20 @@
 <?php
-namespace ZRay\Extension;
+
+namespace ZRayExtensionMagento;
 use DevBar\ModuleManager\Feature\DevBarProducerProviderInterface;
 use Zend\EventManager\EventInterface;
 use Zend\ModuleManager\Feature\AutoloaderProviderInterface;
+use ZendServer\Log\Log;
+use Zend\Loader\StandardAutoloader;
+use ZRayExtensionMagento\Producer\Magento;
 
 class Module implements DevBarProducerProviderInterface, AutoloaderProviderInterface {
 	
+	/* (non-PHPdoc)
+	 * @see \DevBar\ModuleManager\Feature\DevBarProducerProviderInterface::getDevBarProducers()
+	 */
 	public function getDevBarProducers(EventInterface $e) {
-		return array();
+		return array(new Magento());
 	}
 	
 	/* (non-PHPdoc)
@@ -15,12 +22,12 @@ class Module implements DevBarProducerProviderInterface, AutoloaderProviderInter
 	 */
 	public function getAutoloaderConfig() {
 		return array(
-			'Zend\Loader\ClassMapAutoloader' => array(
-			    array(array(
-			    	'ZRay\Extension\Producer\Magento' => 'ZRay\Extension\Producer\Magento.php'
-			    ))
-			)
-		);
+    			'Zend\Loader\StandardAutoloader' => array(
+    					StandardAutoloader::LOAD_NS => array(
+    							__NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,
+    					),
+    			),
+    	);
 	}
 
 }
