@@ -4,7 +4,6 @@ namespace ZRayExtensionMagento;
 use DevBar\ModuleManager\Feature\DevBarProducerProviderInterface;
 use Zend\EventManager\EventInterface;
 use Zend\ModuleManager\Feature\AutoloaderProviderInterface;
-use ZendServer\Log\Log;
 use Zend\Loader\StandardAutoloader;
 use ZRayExtensionMagento\Producer\Magento;
 use Zend\ModuleManager\Feature\ConfigProviderInterface;
