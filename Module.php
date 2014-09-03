@@ -7,8 +7,13 @@ use Zend\ModuleManager\Feature\AutoloaderProviderInterface;
 use ZendServer\Log\Log;
 use Zend\Loader\StandardAutoloader;
 use ZRayExtensionMagento\Producer\Magento;
+use Zend\ModuleManager\Feature\ConfigProviderInterface;
 
-class Module implements DevBarProducerProviderInterface, AutoloaderProviderInterface {
+class Module implements DevBarProducerProviderInterface, AutoloaderProviderInterface, ConfigProviderInterface {
+	
+	public function getConfig() {
+		return include 'config/module.config.php';
+	}
 	
 	/* (non-PHPdoc)
 	 * @see \DevBar\ModuleManager\Feature\DevBarProducerProviderInterface::getDevBarProducers()
