@@ -12,7 +12,7 @@ class Magento extends AbstractDevBarProducer {
 	 */
 	public function __invoke() {
 		$viewModel = new ViewModel(array());
-		$viewModel->setTemplate('z-ray/components/superglobals');
+		$viewModel->setTemplate('z-ray/components/magento');
 		return $viewModel;
 	}
 
