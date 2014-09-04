@@ -97,7 +97,7 @@ class Magento {
 						'area' => $eventArea,
 						'event' => $eventName,
 						'name' => $observerName,
-                        'type' => (string)$observer->type ? type : 'singleton',
+                        'type' => (string)$observer->type ? (string)$observer->type : 'singleton',
 						'class' => Mage::app()->getConfig()->getModelClassName($observer->class),
 						'method' => (string)$observer->method
 				);
@@ -111,6 +111,11 @@ class Magento {
 $zrayMagento = new Magento();
 
 $zre = new ZRayExtension('magento');
+
+$zre->setMetadata(array('assets' => array(
+		'viewscript' => array('filepath' => __DIR__ . '/magento.phtml', 'mime' => 'text/html'),
+)));
+
 $zre->traceFunction('Mage::run', function(){}, array($zrayMagento, 'mageRunExit'));
 $zre->traceFunction('Mage_Core_Model_App::_callObserverMethod', function(){}, array($zrayMagento, 'appCallObserverMethod'));
 $zre->traceFunction('Mage::dispatchEvent', array($zrayMagento, 'magDispatchEvent'), function(){});
