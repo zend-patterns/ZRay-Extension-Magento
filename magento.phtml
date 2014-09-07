@@ -9,9 +9,23 @@
     			<h1>Called Observers JS</h1>
     		</div>
     		<div class="zdb-col-3-wide">
+    			<!-- Pager -->
     			<div class="zdb-pull-left">
-    				<?php echo $this->devBarPager(); ?>
-    			</div>
+    	    		<div class="pager zdb-pager">
+    					<form>
+    						<div class="first zdb-first"></div> <div class="prev zdb-prev"></div>
+    						<div class="next zdb-next"></div> <div class="last zdb-last"></div>
+    						<span class="pagedisplay zdb-pagedisplay"></span>
+    						<select class="pagesize zdb-pagesize pagelimit zdb-pagelimit">
+    							<option value="20">20</option>
+    							<option value="50">50</option>
+    							<option value="100">100</option>
+    							<option value="200">200</option>
+    						</select>
+    					</form>
+    				</div>
+        		</div>
+        		<!-- Pager -->
     			<div class="zdb-pull-right">
     				<ul class="zdb-toolbar-items zdb-horizontal">
     					<li class="zdb-toolbar-filter">
@@ -22,7 +36,10 @@
     						<input type="text" name="zdb-toolbar-input-filter-text" id="zdb-toolbar-input-filter-text" size="6" class="zdb-toolbar-input zdb-toolbar-input-filter-parameter" />
     					</li>
     					<li class="zdb-toolbar-search">
-    						<?php echo $this->devBarSearch(); ?>
+    						<div class="zdb-search-wrapper">
+	    						<input type="text" name="zdb-toolbar-input-search" id="zdb-toolbar-input-search" class="zdb-toolbar-input zdb-toolbar-input-search" data-column="all" />
+	    						<div class="zdb-search-clear hidden" title="Clear">x</div>
+	    					</div>
     					</li>
     					<li>
 							<div class="zdb-export-results-btn" title="Show Report"></div>
@@ -46,6 +63,10 @@
 
 <script type="text/javascript">
 (function() {
-	
+	console.log('register js' );
+	zendDevBar.registerRequestDisplay('magento-extension-js', function($, data) {
+		var extensionData = zendDevBar.customData['magento'];
+		console.log('js', extensionData);
+	});
 })();
 </script>
