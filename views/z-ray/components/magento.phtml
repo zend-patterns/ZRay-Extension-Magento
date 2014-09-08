@@ -158,21 +158,23 @@
 
 	
 	zendDevBar.registerRequestDisplay('magento-extension-php', function($, data) {
-		var extensionData = zendDevBar.parametersMap['magento'];
-
-		var observers = extensionData.observers;
-		var events = extensionData.events;
-
-		$.each(observers, function(key, observer){
-			$.each(events, function(key, event){
-				if (event.event == observer.event && event['class'] == observer['class'] && event.method == observer.method) {
-					observer.duration = event.duration;
-					observer.target = event.target;
-				}
-			}); 
-		});
-
-		calledObserversStorage.setData(observers);
+		if (zendDevBar.parametersMap['magento']) {
+			var extensionData = zendDevBar.parametersMap['magento'];
+	
+			var observers = extensionData.observers;
+			var events = extensionData.events;
+	
+			$.each(observers, function(key, observer){
+				$.each(events, function(key, event){
+					if (event.event == observer.event && event['class'] == observer['class'] && event.method == observer.method) {
+						observer.duration = event.duration;
+						observer.target = event.target;
+					}
+				}); 
+			});
+	
+			calledObserversStorage.setData(observers);
+		}
 	});
 })();
 </script>
