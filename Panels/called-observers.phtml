@@ -1,0 +1,147 @@
+<?php 
+$tableParams = array(
+	'tableId' 			=> 'magento-called-observers-main-table',
+	'summaryTableId'	=> 'magento-called-observers-summary-table',	
+);
+?>
+
+<?php echo $this->zrayTable($tableParams); //zrayTableHtml ?>
+
+<script type="text/javascript">
+(function() {
+	var storage = zray.getStorage('magento-called-observers');
+
+	// create main table
+	var maintable = zray.createTable(storage, jQuery('#<?php echo $tableParams['tableId']; ?>'));
+	maintable.setColumns([
+		{
+			"label": "Event Name",
+			"propertyName": "event",
+			"sortable": true,
+			"width": '33%'
+		},
+		{
+			"label": "Observer",
+			"propertyName": "class",
+			"sortable": true,
+			"getHtml": function(val, rec){
+				return rec['class'] + '::' + rec['method'];
+			},
+			"width": '41%'
+		},
+		{
+			"label": "Time(ms)",
+			"propertyName": "duration",
+			"sortable": true,
+			"width": '100px',
+			'getHtml': function(val, rec) {
+				if (isNaN(val)) {
+					return '';
+				}
+				return zray.formatters.formatMicroseconds(val, 2, false) + 'ms';
+			}
+		},
+		{
+			"label": "block",
+			"propertyName": "block",
+			"sortable": true,
+			"width": '50px'
+		},
+		{
+			"label": "target",
+			"propertyName": "target",
+			"sortable": true,
+			"width": '25%'
+		},
+		{
+			"label": "type",
+			"propertyName": "type",
+			"sortable": true,
+			"width": '80px'
+		},
+		{
+			"label": "area",
+			"propertyName": "area",
+			"sortable": true,
+			"width": '60px'
+		}
+	]);
+	// create main table - end
+
+	// create summary table
+	var summaryTable = zray.createSummaryTable(storage, jQuery('#<?php echo $tableParams['summaryTableId']; ?>'));
+	summaryTable.setColumns([
+		{
+			label: 'Types',
+			propertyName: 'type',
+			width: '10%',
+			getHtml: function(val, rec) { return summaryTable.createCheckboxColumn(val, rec, summaryTable); }
+		},
+		{
+			label: 'Types',
+			propertyName: 'type',
+			width: '80%'
+		},
+		{
+			label: 'Count',
+			propertyName: 'count',
+			width: '10%',
+			attributes: {'class': 'zdb-numerical'},
+			getHtml: function(val) {
+				return '(' + val + ')';
+			}
+		}
+	]);
+
+	summaryTable.setFilterColumn('area');
+	summaryTable.setUpdateCallback(function (data) {
+		if (! data) return [];
+
+		var aggregatedObservers = {};
+		$zendDevBar.each(data, function(key, observer){
+			if (aggregatedObservers[observer.area]) {
+				aggregatedObservers[observer.area]++;
+			} else {
+				aggregatedObservers[observer.area] = 1;
+			}
+		});
+
+		if (Object.keys(aggregatedObservers).length == 0) {
+			return [];
+		}
+		
+		var normalized = [];
+		normalized.push({'type': 'All', 'count': $zendDevBar.map(aggregatedObservers, function(v){return v}).reduce(function(acc, item){return acc += item})});
+		
+		return normalized.concat($zendDevBar.map(aggregatedObservers, function(count, area){
+			return {'type': area, 'count': count};
+		}));
+	});
+	// create summary table - end
+
+	// create pager and search
+	zray.createPager(storage, jQuery('#<?php echo $params['pagerId']; ?>'));
+	zray.createSearch(storage, jQuery('#<?php echo $params['searchId']; ?>'), maintable);
+
+	// handle data
+	zray.registerDataHandler('magento-called-observers', function(customData, requestData) {
+		if (customData['magento']) {
+			var extensionData = customData['magento'];
+	
+			var observers = extensionData.observers;
+			var events = extensionData.events;
+	
+			jQuery.each(observers, function(key, observer){
+				jQuery.each(events, function(key, event){
+					if (event.event == observer.event && event['class'] == observer['class'] && event.method == observer.method) {
+						observer.duration = event.duration;
+						observer.target = event.target;
+					}
+				}); 
+			});
+	
+			storage.setData(observers);
+		}
+	});
+})();
+</script>
