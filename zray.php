@@ -1,38 +1,89 @@
 <?php
 
-
 class Magento {
 	
 	/**
 	 * @var array
 	 */
 	private $eventTargets = array();
+	private $requests = array();
+	private $zray = null;
+    
+    public function setZRay($zray) {
+        $this->zray = $zray;
+    }
+    
+    /**
+     * @return \ZRayExtension
+     */
+    public function getZRay() {
+        return $this->zray;
+    }
+    
+	/**
+	 * @param array $context
+	 * @param array $storage
+	 */
+	public function mageAppExit($context, &$storage){
+        $this->requests = (array)Mage::app()->getRequest();
+        // Now that we got our requests, we can untrace 'Mage::app' (for performance reasons)
+        $this->getZRay()->untraceFunction("Mage::app");
+	}
 	
 	/**
 	 * @param array $context
 	 * @param array $storage
 	 */
 	public function mageRunExit($context, &$storage){
+		
+		//Observers / Events
 		$storage['observers'] = array();
 		$this->storeObservers($storage['observers']);
-
-//		$storage['info'] = array(
-/// store, website, frontcontroller all cause problems in unserialize
-// 				'store' => Mage::app()->getStore(),
-// 				'website' => Mage::app()->getWebsite(),
-// 				'frontcontroller' => Mage::app()->getFrontController(),
-//				'request' => Mage::app()->getRequest()
-//		);
-
-		foreach((array)Mage::app()->getRequest() as $key=>$value) {
-		 $storage['request'][] = array('property' => $key, 'value' => $value);
+		
+		//Requests
+		$finalRequests = (array)Mage::app()->getRequest();
+		
+		foreach($this->requests as $key=>$value) {
+			$finalVal = !array_key_exists($key,$finalRequests) ? '[NULL]' : $finalRequests[$key];
+			$storage['request'][] = array('property' => $key, 
+                                          'Init Value' => is_array($value) ? print_r($value,true) : $value, 'Final Value'=>is_array($finalVal) ? print_r($finalVal,true) : $finalVal);
 		}
 
+		//Handles
 		$storage['handles'] = array_map(function($handle){
 			return array('name' => $handle);
 		}, Mage::app()->getLayout()->getUpdate()->getHandles());
+		
+		//Blocks
+		$storage['blocks'][] = $this->getBlocks($this->getRootBlock());
+		
+		//Overview
+		$storage['overview'] = $this->getOverview();
 	}
 	
+	
+	private function getOverview(){
+		$_website = Mage::app()->getWebsite();
+		$_store = Mage::app()->getStore();
+        $cacheMethod = explode('_',get_class(Mage::app()->getCache()->getBackend()));
+        $cacheMethod = end($cacheMethod);
+		
+		$overview = array(
+			'Website ID'=>$_website->getId(),
+			'Website Name'=>$_website->getName(),
+			'Store Id'=>$_store->getGroupId(),
+			'Store Name'=>$_store->getGroup()->getName(),
+			'Store View Id'=>$_store->getId(),
+			'Store View Code'=>$_store->getCode(),
+			'Store View Name'=>$_store->getName(),
+			'Cache Method'=>$cacheMethod
+		);
+		$arr = array();
+		foreach($overview as $k => $v){
+			$arr[]=array('Key'=>$k,'Value'=>$v);
+		}
+		return $arr;
+	}
 	
 	/**
 	 * @param array $context
@@ -55,11 +106,11 @@ class Magento {
 		$observerData = $context['functionArgs'][2]->getData();
 		$eventArgs = $observerData['event']->getData();
 		$event = $observerData['event']->getName();
-		$block = $observerData['event']->getBlock();
 		$object = get_class($context['functionArgs'][0]);
 
+		//Events
 		$storage['events'][] = array('event' => $event, 'class' => $object, 'method' => $method,
-				'duration' => $context['durationInclusive'], 'block' => $block, 'target' => get_class($this->eventTargets[$event]));
+				'duration' => $context['durationInclusive'], 'target' => get_class($this->eventTargets[$event]));
 	}
 	
 	/**
@@ -105,15 +156,48 @@ class Magento {
 			}
 		}
 	}
+	
+    private function getRootBlock()
+    {
+        return Mage::app()->getLayout()->getBlock('root');     
+    }
+
+    private function getBlocks($block)
+    {
+		$blocks = array();
+		if($block && $block->getChild()){
+			$sortedChildren = $block->getSortedChildren();
+			foreach ($sortedChildren as $childname) {
+				$child = $block->getChild($childname);
+                if (!$child){
+                  continue;
+                }
+				$hasChildren =  $child->getChild() ? true : false;
+				if($hasChildren){
+					$blocks[$child->getNameInLayout()]=$this->getBlocks($child);
+				}else{
+					$blocks[$child->getNameInLayout()]=array(
+						'Class'=>get_class($child),
+						'Template'=>$child->getTemplateFile() ? $child->getTemplateFile() : $child->getTemplate()
+						);
+				}
+			}
+		}
+		return $blocks;
+    }
+    
 }
 
 
 $zrayMagento = new Magento();
+$zrayMagento->setZRay(new ZRayExtension('magento'));
 
-$zre = new ZRayExtension('magento');
+$zrayMagento->getZRay()->setMetadata(array(
+    'logo' => __DIR__ . DIRECTORY_SEPARATOR . 'logo.png',
+));
 
-$zre->traceFunction('Mage::run', function(){}, array($zrayMagento, 'mageRunExit'));
-$zre->traceFunction('Mage_Core_Model_App::_callObserverMethod', function(){}, array($zrayMagento, 'appCallObserverMethod'));
-$zre->traceFunction('Mage::dispatchEvent', array($zrayMagento, 'magDispatchEvent'), function(){});
-//$zre->traceFunction('Mage_Core_Controller_Varien_Front', function(){}, function(){});
-////$this->_getRequestRewriteController()->rewrite();
+$zrayMagento->getZRay()->setEnabledAfter('Mage::run');
+$zrayMagento->getZRay()->traceFunction('Mage::app', function(){}, array($zrayMagento, 'mageAppExit'));
+$zrayMagento->getZRay()->traceFunction('Mage::run', function(){}, array($zrayMagento, 'mageRunExit'));
+$zrayMagento->getZRay()->traceFunction('Mage_Core_Model_App::_callObserverMethod', function(){}, array($zrayMagento, 'appCallObserverMethod'));
+$zrayMagento->getZRay()->traceFunction('Mage::dispatchEvent', array($zrayMagento, 'magDispatchEvent'), function(){});	
